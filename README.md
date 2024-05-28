@@ -1,5 +1,10 @@
 # DiscordBot
-Starting code for a discord bot. Can be repurposed for other projects later. I will include extensive documentation so the end user knows how everything works.
+
+The Team Bot is designed to help servers that host competitive lobbies where a group will
+split into two teams and play against each other. It will provide several different options
+for splitting up a team, including polls for self selection, team captains, or randomly
+assigning all members. There will also be options for having different amounts of teams, or
+having a spectator.
 
 ## Discord Setup
 
