@@ -12,6 +12,7 @@
         - https://discordpy.readthedocs.io/en/latest/api.html
 """
 import datetime
+import math
 import os
 import random
 from typing import List
@@ -54,44 +55,65 @@ async def on_ready():
         activity=discord.Game(name="Today's Wordle")
     )
 
-async def splitTeams(self, message: discord.Message):
-    command = message.content.split()
+@discord_bot.command
+async def shuffle(ctx: discord.ext.commands.context.Context, mode: str = "1", teams: int = 2):
+    """_summary_
+
+    Args:
+        ctx (discord.ext.commands.context.Context): _description_
+        mode (str, optional): _description_. Defaults to "1".
+        teams (int, optional): _description_. Defaults to 2.
+    """
+    print(mode)
     maxteamsize = 0
-    if len(command) > 1:
-        try:
-            maxteamsize = int(command[1])
-        except:
-            await message.channel.send('Hey {0.author.mention}, the max team size has to be a positive integer (no decimals!) not "{1}" - Be Better!'.format(message, channel[1]))
-            return
-    if maxteamsize < 0:
-        await message.channel.send('Hey {0.author.mention}, the max team size has to be a postive integer (no decimals!) not "{1}" - Be Better!'.format(message, channel[1]))
+    try:
+        maxteamsize = int(teams)
+    except Exception as e:
+        print(e)
+        await ctx.send(
+            f'Hey {ctx.author.mention}, the max team size has to be an integer (no decimals!), not "{teams}" - Be Better!'
+        )
         return
-    channels = await self.GetChannelList(message)
-    lobby = await self.GetLobbyChannel(channels)
+    if maxteamsize < 0:
+        await ctx.send(
+            f'Hey {ctx.author.mention},the max team size has to be postive, not "{teams}" - Be Better!'
+        )
+        return
+    channels = await get_channel_list(ctx)
+    lobby = await get_lobby_channel(channels)
     members = lobby.members
     # get member count
     numplayers = len(members)
     if numplayers == 0:
-        await message.channel.send('Hey, no one is in the lobby!  Get in the lobby and then ask me to split the teams')
+        await ctx.send('Hey, no one is in the lobby!  Get in the lobby and then ask me to split the teams')
         return
     if maxteamsize == 0:
         maxteamsize = math.ceil(numplayers/2)
     # get number of teams
     numteams = math.ceil(numplayers/maxteamsize)
     # get channels they are being shifted to
-    MoveToChannels = await self.GetChannels(channels, numteams)
+    move_channels = await get_channels(channels, numteams)
     # shuffle members
     random.shuffle(members)
-    teamNumber = 0
+    team_number = 0
     # move members
     for member in members:
-        await member.move_to(MoveToChannels[teamNumber])
-        teamNumber += 1
-        if teamNumber == numteams:
-            teamNumber = 0
-    await message.channel.send('Ready set go! Have fun!')
+        await member.move_to(move_channels[team_number])
+        team_number += 1
+        if team_number == numteams:
+            team_number = 0
+    await ctx.send('Ready set go! Have fun!')
 
-async def GetChannels(self, channels: List[discord.VoiceChannel], numchannels: int):
+async def get_channels(channels: List[discord.VoiceChannel], numchannels: int):
+    """_summary_
+
+    Args:
+        channels (List[discord.VoiceChannel]): _description_
+        numchannels (int): _description_
+
+    Returns:
+        _type_: _description_
+    """
     # shuffle channels to make it random
     gotochannels = []
     random.shuffle(channels)
@@ -102,18 +124,29 @@ async def GetChannels(self, channels: List[discord.VoiceChannel], numchannels: i
             if len(gotochannels) == numchannels:
                 return gotochannels
 
-async def GetChannelList(self, message: discord.Message):
-    channels = message.guild.voice_channels
+async def get_channel_list(ctx: discord.ext.commands.context.Context):
+    """_summary_
+
+    Args:
+        ctx (discord.ext.commands.context.Context): _description_
+
+    Returns:
+        _type_: _description_
+    """
+    channels = ctx.guild.voice_channels
     return channels
 
-async def GetLobbyChannel(self, channels: List[discord.VoiceChannel]):
-     for c in channels:
-         if c.name == 'Lobby':
-             return c
+async def get_lobby_channel(channels: List[discord.VoiceChannel]):
+    """_summary_
 
-@discord_bot.command
-async def command(ctx: discord.ext.commands.context.Context, arg1: str = None):
-    """ Command that takes a singe parameter """
-    await ctx.send(f"Entered command! Arg 1: {arg1}")
+    Args:
+        channels (List[discord.VoiceChannel]): _description_
+
+    Returns:
+        _type_: _description_
+    """
+    for c in channels:
+        if c.name == 'Lobby':
+            return c
 
 discord_bot.run(DISCORD_TOKEN)
